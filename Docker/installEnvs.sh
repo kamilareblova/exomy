@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Loop through all .yml files in the current directory
 for file in *.yml; do
     # Check if the file exists
