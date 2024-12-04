@@ -28,3 +28,4 @@ dependencies:
   - samtools=1.6=hb116620_7
   - xz=5.2.5=h7b6447c_0
   - zlib=1.2.11=h7b6447c_3
+  - samblaster
