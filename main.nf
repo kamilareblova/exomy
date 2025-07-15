@@ -214,6 +214,84 @@ process VCF2TXT {
         """
 }
 
+process VEP {
+    tag "VEP on $name"
+    publishDir "${params.outDirectory}/${sample.run}/varianty/", mode:'copy'
+    //container "ensemblorg/ensembl-vep:release_108.0"
+    container "ensemblorg/ensembl-vep:release_114.1"
+
+    input:
+    tuple val(name), val(sample), path("${name}.norm.vcf.gz"), path("${name}.norm.vcf.gz.tbi")
+
+    output:
+    tuple val(name), val(sample), path("${name}.vep.vcf")
+
+    script:
+    """
+    vep -i ${name}.norm.vcf.gz --cache --cache_version 114 --dir_cache $params.vep \
+        --fasta ${params.ref}.fa --merged --offline --vcf --hgvs -o ${name}.vep.vcf \
+    --dir_plugins ${params.vepplugin} --force_overwrite --no_stats --plugin AlphaMissense,file=${params.alfamissense}
+    """
+}
+
+
+process BIOPET {
+     tag "BIOPET on $name"
+     publishDir "${params.outDirectory}/${sample.run}/varianty/", mode:'copy'
+
+     input:
+     tuple val(name), val(sample), path(vep)
+
+     output:
+     tuple val(name), val(sample), path("${name}.vepalpfa.anot.vcf")
+
+     script:
+     """
+     source activate biopet
+     biopet tool VepNormalizer -I $vep -O ${name}.vepalpfa.anot.vcf -m standard
+     """
+}
+
+process VCFTOTXTVEP {
+
+        tag "VCFTOTXTVEP on $name"
+        publishDir "${params.outDirectory}/${sample.run}/varianty/", mode:'copy'
+
+        input:
+        tuple val(name), val(sample), path(biopet)
+
+        output:
+        tuple val(name), val(sample), path("${name}.vepalpfa.anot.txt")
+
+        script:
+        """
+        source activate py36
+
+        python ${params.vcfsimplify} SimplifyVCF -toType table -inVCF $biopet -out ${name}.vepalpfa.anot.txt
+        """
+}
+
+process spojitannovarVEP {
+
+        tag "spojitannovarVEP on $name"
+        publishDir "${params.outDirectory}/${sample.run}/varianty/", mode:'copy'
+
+        input:
+        tuple val(name), val(sample), path(final_txt), path(vep_txt)
+
+        output:
+        path("${name}.merged.txt")
+
+        script:
+        """
+        echo "Merging ${final_txt} and ${vep_txt}"
+        awk '{print \$1, \$2, \$4, \$5, \$53, \$54}' ${vep_txt} > ${name}.merged.txt > vyber
+        sed -i 's/ /\t/'g vyber
+        paste ${final_txt}  vyber > ${name}.merged.txt
+        """
+}
+
+
 process COVERAGE1 {
           tag "COVERAGE1 on $name"
        publishDir "${params.outDirectory}/${sample.run}/mapped/", mode:'copy'
@@ -334,6 +412,16 @@ anotovanymetarnn = ANOTACE_MetaRNN(metarnnskore)
 
 anotovany = ANOTACE_annovar(anotovanymetarnn)
 anotovanyfin = VCF2TXT(anotovany)
+
+vepovany = VEP(normalizovany)
+
+biopetovany = BIOPET(vepovany)
+textovany = VCFTOTXTVEP(biopetovany)
+
+combined = anotovanyfin.join(textovany, by: [0,1])
+spojitannovarVEP(combined)
+
+
 coverage_results = COVERAGE1(aligned)
 coverage_files_collected = coverage_results
     .map { name, sample, f -> tuple(sample.run, file(f)) }
