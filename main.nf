@@ -285,7 +285,7 @@ process spojitannovarVEP {
         script:
         """
         echo "Merging ${final_txt} and ${vep_txt}"
-        awk '{print \$1, \$2, \$4, \$5, \$53, \$54}' ${vep_txt} > ${name}.merged.txt > vyber
+        awk '{print \$1, \$2, \$4, \$5, \$53, \$54}' ${vep_txt}  > vyber
         sed -i 's/ /\t/'g vyber
         paste ${final_txt}  vyber > ${name}.merged.txt
         """
