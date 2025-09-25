@@ -35,7 +35,7 @@ process GATK {
         """
         echo GATK $name
         source activate gatk4610
-        gatk --java-options "-Xmx4g" HaplotypeCaller -R ${params.ref}.fa -I $bam -L ${params.varbed}  --dont-use-soft-clipped-bases true -A StrandBiasBySample -minimum-mapping-quality 0 --mapping-quality-threshold-for-genotyping 0 --enable-dynamic-read-disqualification-for-genotyping true --flow-filter-alleles-qual-threshold 0 -O ${name}.vcf
+        gatk --java-options "-Xmx4g" HaplotypeCaller -R ${params.ref}.fa -I $bam -L ${params.varbed2}  --dont-use-soft-clipped-bases true -A StrandBiasBySample -minimum-mapping-quality 0 --mapping-quality-threshold-for-genotyping 0 --enable-dynamic-read-disqualification-for-genotyping true --flow-filter-alleles-qual-threshold 0 -O ${name}.vcf
         """
 }
 
@@ -283,7 +283,7 @@ process spojitannovarVEP {
         script:
         """
         echo "Merging ${final_txt} and ${vep_txt}"
-        awk '{print \$1, \$2, \$4, \$5, \$28, \$29, \$55, \$56}' ${vep_txt}  > vyber
+        awk '{print \$1, \$2, \$4, \$5, \$28, \$29, \$55, \$56, \$43, \$44}' ${vep_txt}  > vyber
         sed -i 's/ /\t/'g vyber
         paste ${final_txt}  vyber > ${name}.merged.txt
         """
