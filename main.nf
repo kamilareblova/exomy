@@ -22,28 +22,6 @@ process ALIGN {
 	"""
 }
 
-process CRAM {
-        tag "CRAM on $name using $task.cpus CPUs and $task.memory memory"
-        publishDir "${params.outDirectory}/${sample.run}/crams/", mode:'copy'
-        container "staphb/samtools:1.20"
-        label "l_cpu"
-        label "l_mem"
-
-   
-        input:
-        tuple val(name), val(sample), path(bam), path(bai)
-        
-        output:
-        tuple val(name), val(sample), path("${name}.cram"), path("${name}.cram.crai")
-
-        script:
-        """
-        echo CRAM $name
-        samtools view -T ${params.refindex}.fa -C -o ${name}.cram $bam
-        samtools index ${name}.cram
-        """
-}
-
 process GATK {
        tag "GATK on $name"
        publishDir "${params.outDirectory}/${sample.run}/varianty/", mode:'copy'
@@ -60,26 +38,6 @@ process GATK {
         gatk --java-options "-Xmx4g" HaplotypeCaller -R ${params.ref}.fa -I $bam -L ${params.varbed}  --dont-use-soft-clipped-bases true -A StrandBiasBySample -minimum-mapping-quality 0 --mapping-quality-threshold-for-genotyping 0 --enable-dynamic-read-disqualification-for-genotyping true --flow-filter-alleles-qual-threshold 0 -O ${name}.vcf
         """
 }
-
-process VARDICT {
-
-         tag "VARDICT on $name"
-         publishDir "${params.outDirectory}/${sample.run}/viktor/", mode:'copy'
-
-         input:
-         tuple val(name), val(sample), path(bam), path(bai)
-         output:
-         tuple val(name), val(sample), path("${name}.vcf")
-
-         script:
-         """
-         echo VARDICT $name
-
-        source activate vardict
-        vardict -G ${params.refindex}.fa -f 0.05 -N ${name} -b ${bam} -c 1 -S 2 -E 3 -g 4 -U ${params.varbed3} | Rscript ${params.teststrandbias} | perl ${params.var2vcf_valid} -N ${name} -f 0.05 -A > ${name}.vcf
-       """
-}
-
 
 
 process VAFaNORMALIZACE {
@@ -231,7 +189,7 @@ process ANOTACE_annovar {
         echo ANOTACE $name
 
         ${params.annovar} -vcfinput ${name}.norm.metarnn.vcf.gz ${params.annovardb}  -buildver hg38 -protocol refGeneWithVer,ensGene,1000g2015aug_all,1000g2015aug_eur,exac03nontcga,avsnp150,clinvar_20240917,dbnsfp41c,gnomad41_exome,gnomad41_genome,cosmic70,revel,GTEx_v8_eQTL \
-        -operation gx,g,f,f,f,f,f,f,f,f,f,f,f -nastring . -otherinfo -polish -xreffile ${params.gene_fullxref.txt} -arg '-splicing 20 -exonicsplicing',,,,,,,,,,,, --remove
+        -operation gx,g,f,f,f,f,f,f,f,f,f,f,f -nastring . -otherinfo -polish -xreffile ${params.gene_fullxref.txt} -arg '-splicing 50 -exonicsplicing',,,,,,,,,,,, --remove
         bgzip ${name}.norm.metarnn.vcf.gz.hg38_multianno.vcf
         tabix ${name}.norm.metarnn.vcf.gz.hg38_multianno.vcf.gz
         """
@@ -439,9 +397,7 @@ workflow {
      . view()
 
 aligned = ALIGN(rawfastq)
-cramy = CRAM(aligned)
 varcalling = GATK(aligned)
-varcalling2 = VARDICT(aligned)
 normalizovany = VAFaNORMALIZACE(varcalling)
 
 anotovanyacgt = ANOTACE_ACGT(normalizovany)
