@@ -7,7 +7,7 @@ process ALIGN {
  
 	
 	input:
-	tuple val(name), val(sample), path("${name}_R1.trimm.fastq.gz"), path("${name}_R2.trimm.fastq.gz")
+	tuple val(name), val(sample), path(fwd), path(rev)
 
 	output:
     tuple val(name), val(sample), path("${name}.mdup.sorted.bam"), path("${name}.mdup.sorted.bai")
@@ -17,9 +17,31 @@ process ALIGN {
 	"""
 	echo ALIGN $name
 	source activate bwa
-	bwa mem -R ${rg} -t $task.cpus ${params.refindex}.fa ${name}_R1.trimm.fastq.gz ${name}_R2.trimm.fastq.gz | samblaster |samtools view -Sb - | sambamba sort /dev/stdin -o ${name}.mdup.sorted.bam
+	bwa mem -R ${rg} -t $task.cpus ${params.refindex}.fa $fwd $rev | samblaster |samtools view -Sb - | sambamba sort /dev/stdin -o ${name}.mdup.sorted.bam
         samtools index ${name}.mdup.sorted.bam ${name}.mdup.sorted.bai
 	"""
+}
+
+process CRAM {
+        tag "CRAM on $name using $task.cpus CPUs and $task.memory memory"
+        publishDir "${params.outDirectory}/${sample.run}/crams/", mode:'copy'
+        container "staphb/samtools:1.20"
+        label "l_cpu"
+        label "l_mem"
+
+   
+        input:
+        tuple val(name), val(sample), path(bam), path(bai)
+        
+        output:
+        tuple val(name), val(sample), path("${name}.cram"), path("${name}.cram.crai")
+
+        script:
+        """
+        echo CRAM $name
+        samtools view -T ${params.refindex}.fa -C -o ${name}.cram $bam
+        samtools index ${name}.cram
+        """
 }
 
 process GATK {
@@ -35,9 +57,30 @@ process GATK {
         """
         echo GATK $name
         source activate gatk4610
-        gatk --java-options "-Xmx4g" HaplotypeCaller -R ${params.ref}.fa -I $bam -L ${params.varbed2}  --dont-use-soft-clipped-bases true -A StrandBiasBySample -minimum-mapping-quality 0 --mapping-quality-threshold-for-genotyping 0 --enable-dynamic-read-disqualification-for-genotyping true --flow-filter-alleles-qual-threshold 0 -O ${name}.vcf
+        gatk --java-options "-Xmx4g" HaplotypeCaller -R ${params.ref}.fa -I $bam -L ${params.varbed}  --dont-use-soft-clipped-bases true -A StrandBiasBySample -minimum-mapping-quality 0 --mapping-quality-threshold-for-genotyping 0 --enable-dynamic-read-disqualification-for-genotyping true --flow-filter-alleles-qual-threshold 0 -O ${name}.vcf
         """
 }
+
+process VARDICT {
+
+         tag "VARDICT on $name"
+         publishDir "${params.outDirectory}/${sample.run}/viktor/", mode:'copy'
+
+         input:
+         tuple val(name), val(sample), path(bam), path(bai)
+         output:
+         tuple val(name), val(sample), path("${name}.vcf")
+
+         script:
+         """
+         echo VARDICT $name
+
+        source activate vardict
+        vardict -G ${params.refindex}.fa -f 0.05 -N ${name} -b ${bam} -c 1 -S 2 -E 3 -g 4 -U ${params.varbed3} | Rscript ${params.teststrandbias} | perl ${params.var2vcf_valid} -N ${name} -f 0.05 -A > ${name}.vcf
+       """
+}
+
+
 
 process VAFaNORMALIZACE {
         tag "VAFaNORMALIZACE on $name"
@@ -55,8 +98,8 @@ process VAFaNORMALIZACE {
         echo VAFaNORMALIZACE $name
 
         bcftools +fill-tags $gatk -Ob -o ${name}.pom2.bcf -- -t FORMAT/VAF
-        bcftools convert -O v -o ${name}.vaf.vcf ${name}.pom2.bcf
-
+        bcftools convert -O v -o ${name}.vaf.vcf ${name}.pom2.bcf 
+         
         bcftools norm -m-both -f ${params.ref}.fa -o ${name}.norm.vcf ${name}.vaf.vcf
         bgzip ${name}.norm.vcf
         tabix ${name}.norm.vcf.gz
@@ -69,7 +112,7 @@ process ANOTACE_ACGT {
         publishDir "${params.outDirectory}/${sample.run}/varianty/", mode:'copy'
 
         input:
-        tuple val(name), val(sample), path("${name}.norm.vcf.gz"), path("${name}.norm.vcf.gz.tbi") 
+        tuple val(name), val(sample), path("${name}.norm.vcf.gz"), path("${name}.norm.vcf.gz.tbi")
 
         output:
         tuple val(name), val(sample), path("${name}.norm.acgt.vcf"), path("${name}.norm.vcf.gz"), path("${name}.norm.vcf.gz.tbi")
@@ -98,13 +141,8 @@ process ANOTACE_OMIM {
         """
         source activate bcftoolsbgziptabix
         echo ANOTACEOMIM $name
-        bcftools norm -m-both -f ${params.ref}.fa -o ${name}.norm.vcf ${name}.norm.acgt.vcf
 
-        bcftools view ${name}.norm.vcf  -o ${name}.pom.bcf
-        bcftools +fill-tags ${name}.pom.bcf -Ob -o ${name}.pom2.bcf -- -t FORMAT/VAF
-        bcftools convert -O v -o ${name}.norm.vaf.vcf ${name}.pom2.bcf
-
-bcftools annotate -a ${params.AR} -h ${params.ARheader} -c CHROM,FROM,TO,dedicnostAR -l dedicnostAR:append -m -xx ${name}.norm.vaf.vcf > ${name}.pom3
+bcftools annotate -a ${params.AR} -h ${params.ARheader} -c CHROM,FROM,TO,dedicnostAR -l dedicnostAR:append -m -xx ${name}.norm.acgt.vcf > ${name}.pom3
 bcftools annotate -a ${params.AD} -h ${params.ADheader} -c CHROM,FROM,TO,dedicnostAD -l dedicnostAD:append -m -aa ${name}.pom3 > ${name}.pom4
 bcftools annotate -a ${params.Xlinked}  -h ${params.Xlinkedheader} -c CHROM,FROM,TO,dedicnostXlinked -l dedicnostXlinked:append -m -bb ${name}.pom4 > ${name}.pom5
 bcftools annotate -a ${params.Ylinked}  -h ${params.Ylinkedheader} -c CHROM,FROM,TO,dedicnostYlinked -l dedicnostYlinked:append -m -cc ${name}.pom5 > ${name}.pom6
@@ -166,7 +204,7 @@ process ANOTACE_MetaRNN {
         echo ANOTACEMetaRNN $name
         bgzip ${name}.MetaRNN.pom.vcf
         tabix ${name}.MetaRNN.pom.vcf.gz
- 
+
         bgzip ${name}.norm.vaf.omim.vcf
         tabix ${name}.norm.vaf.omim.vcf.gz
 
@@ -176,7 +214,6 @@ process ANOTACE_MetaRNN {
         tabix ${name}.norm.metarnn.vcf.gz
         """
 }
-
 
 process ANOTACE_annovar {
        tag "ANOTACE on $name"
@@ -200,11 +237,10 @@ process ANOTACE_annovar {
         """
 }
 
-
 process VCF2TXT {
        tag "VCF2TXT on $name"
        publishDir "${params.outDirectory}/${sample.run}/varianty/", mode:'copy'
-       
+
         input:
         tuple val(name), val(sample), path("${name}.norm.metarnn.vcf.gz.hg38_multianno.vcf.gz"), path("${name}.norm.metarnn.vcf.gz.hg38_multianno.vcf.gz.tbi")
 
@@ -221,13 +257,13 @@ process VCF2TXT {
 
 process VEP {
     tag "VEP on $name"
-    publishDir "${params.outDirectory}/${sample.run}/varianty/", mode:'copy'
+    publishDir "${params.outDirectory}/${sample.run}/varianty/", mode:'copy' 
     //container "ensemblorg/ensembl-vep:release_108.0"
     container "ensemblorg/ensembl-vep:release_114.1"
-
+  
     input:
     tuple val(name), val(sample), path("${name}.norm.vcf.gz"), path("${name}.norm.vcf.gz.tbi")
-
+ 
     output:
     tuple val(name), val(sample), path("${name}.vep.vcf")
 
@@ -235,10 +271,9 @@ process VEP {
     """
     vep -i ${name}.norm.vcf.gz --cache --cache_version 114 --dir_cache $params.vep \
         --fasta ${params.ref}.fa --merged --offline --vcf --hgvs -o ${name}.vep.vcf \
-    --dir_plugins ${params.vepplugin} --force_overwrite --no_stats --plugin AlphaMissense,file=${params.alfamissense}
+    --plugin CADD,snv=${params.caddsnv},indels=${params.caddindel} --dir_plugins ${params.vepplugin} --force_overwrite --no_stats --plugin AlphaMissense,file=${params.alfamissense} 
     """
 }
-
 
 process BIOPET {
      tag "BIOPET on $name"
@@ -290,12 +325,11 @@ process spojitannovarVEP {
         script:
         """
         echo "Merging ${final_txt} and ${vep_txt}"
-        awk '{print \$1, \$2, \$4, \$5, \$53, \$54}' ${vep_txt}  > vyber
+        awk '{print \$1, \$2, \$4, \$5, \$28, \$29, \$55, \$56}' ${vep_txt}  > vyber
         sed -i 's/ /\t/'g vyber
         paste ${final_txt}  vyber > ${name}.merged.txt
         """
 }
-
 
 process COVERAGE1 {
           tag "COVERAGE1 on $name"
@@ -404,11 +438,10 @@ workflow {
     }
      . view()
 
-
 aligned = ALIGN(rawfastq)
-
+cramy = CRAM(aligned)
 varcalling = GATK(aligned)
-
+varcalling2 = VARDICT(aligned)
 normalizovany = VAFaNORMALIZACE(varcalling)
 
 anotovanyacgt = ANOTACE_ACGT(normalizovany)
@@ -424,7 +457,6 @@ textovany = VCFTOTXTVEP(biopetovany)
 
 combined = anotovanyfin.join(textovany, by: [0,1])
 spojitannovarVEP(combined)
-
 
 coverage_results = COVERAGE1(aligned)
 coverage_files_collected = coverage_results
