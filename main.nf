@@ -188,7 +188,7 @@ process ANOTACE_annovar {
         source activate bcftoolsbgziptabix
         echo ANOTACE $name
 
-        ${params.annovar} -vcfinput ${name}.norm.metarnn.vcf.gz ${params.annovardb}  -buildver hg38 -protocol refGeneWithVer,ensGene,1000g2015aug_all,1000g2015aug_eur,exac03nontcga,avsnp150,clinvar_20240917,dbnsfp41c,gnomad41_exome,gnomad41_genome,cosmic70,revel,GTEx_v8_eQTL \
+        ${params.annovar} -vcfinput ${name}.norm.metarnn.vcf.gz ${params.annovardb}  -buildver hg38 -protocol refGeneWithVer,ensGene,1000g2015aug_all,1000g2015aug_eur,exac03nontcga,avsnp150,clinvar_20250721,dbnsfp41c,gnomad41_exome,gnomad41_genome,cosmic70,revel,GTEx_v8_eQTL \
         -operation gx,g,f,f,f,f,f,f,f,f,f,f,f -nastring . -otherinfo -polish -xreffile ${params.gene_fullxref.txt} -arg '-splicing 50 -exonicsplicing',,,,,,,,,,,, --remove
         bgzip ${name}.norm.metarnn.vcf.gz.hg38_multianno.vcf
         tabix ${name}.norm.metarnn.vcf.gz.hg38_multianno.vcf.gz
@@ -229,7 +229,7 @@ process VEP {
     """
     vep -i ${name}.norm.vcf.gz --cache --cache_version 114 --dir_cache $params.vep \
         --fasta ${params.ref}.fa --merged --offline --vcf --hgvs -o ${name}.vep.vcf \
-    --plugin CADD,snv=${params.caddsnv},indels=${params.caddindel} --dir_plugins ${params.vepplugin} --force_overwrite --no_stats --plugin AlphaMissense,file=${params.alfamissense} 
+    --plugin CADD,snv=${params.caddsnv},indels=${params.caddindel} --dir_plugins ${params.vepplugin} --force_overwrite --no_stats --plugin AlphaMissense,file=${params.alfamissense} --plugin MaxEntScan,${params.MaxEntScan} --plugin SpliceAI,snv=${params.spliceaisnv},indel=${params.spliceaisnv}
     """
 }
 
@@ -273,7 +273,7 @@ process spojitannovarVEP {
 
         tag "spojitannovarVEP on $name"
         publishDir "${params.outDirectory}/${sample.run}/varianty/", mode:'copy'
-
+        // awk '{for(\i=1;\i<=4;\i++) printf "%s ", $i; for(\i=15;\i<=19;\i++) printf "%s ", $i; for(i=50;i<=51;i++) printf "%s ", $i; for(i=5;i<=14;i++) printf "%s ", $i; for(i=20;i<=49;i++) printf "%s ", $i; for(i=52;i<=60;i++) printf "%s ", $i; printf "\n" }' spojeni > ${name}.merged.txt
         input:
         tuple val(name), val(sample), path(final_txt), path(vep_txt)
 
@@ -283,9 +283,13 @@ process spojitannovarVEP {
         script:
         """
         echo "Merging ${final_txt} and ${vep_txt}"
-        awk '{print \$1, \$2, \$4, \$5, \$28, \$29, \$55, \$56, \$43, \$44}' ${vep_txt}  > vyber
+        awk '{print \$1, \$2, \$4, \$5, \$28, \$29, \$43, \$44, \$47, \$48, \$49, \$61, \$62, \$63, \$64, \$67, \$68}' ${vep_txt}  > vyber
         sed -i 's/ /\t/'g vyber
-        paste ${final_txt}  vyber > ${name}.merged.txt
+        paste ${final_txt}  vyber > spojeni
+        
+        awk '{print \$1, \$2, \$3, \$4, \$15, \$16, \$17, \$18, \$19, \$50, \$51, \$5, \$6, \$7, \$8, \$9, \$10, \$11, \$12, \$13, \$14, \$20, \$21, \$22, \$23, \$24, \$25, \$26, \$27, \$28, \$29, \$30, \$31, \$32, \$33, \$34, \$35, \$36, \$37, \$38, \$39, \$40, \$41, \$42, \$43, \$44, \$45, \$46, \$47, \$48, \$49, \$52, \$53, \$54, \$55, \$56, \$57, \$58, \$59, \$60}' spojeni > ${name}.merged.txt
+        
+sed -i 's/ /\t/'g ${name}.merged.txt
         """
 }
 
