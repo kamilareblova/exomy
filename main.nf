@@ -10,7 +10,7 @@ process ALIGN {
 	tuple val(name), val(sample), path(fwd), path(rev)
 
 	output:
-    tuple val(name), val(sample), path("${name}.mdup.sorted.bam"), path("${name}.mdup.sorted.bai")
+    tuple val(name), val(sample), path("${name}.mdup.sorted.bam"), path("${name}.mdup.sorted.bai"), path("${name}.flagstat")
 
 	script:
 	rg = "\"@RG\\tID:${name}\\tSM:${name}\\tLB:${name}\\tPL:ILLUMINA\""
@@ -19,7 +19,29 @@ process ALIGN {
 	source activate bwa
 	bwa mem -R ${rg} -t $task.cpus ${params.refindex}.fa $fwd $rev | samblaster |samtools view -Sb - | sambamba sort /dev/stdin -o ${name}.mdup.sorted.bam
         samtools index ${name}.mdup.sorted.bam ${name}.mdup.sorted.bai
+        samtools flagstat ${name}.mdup.sorted.bam > ${name}.flagstat
 	"""
+}
+
+process QUALIMAP {
+
+        tag "QUALIMAP on $name using $task.cpus CPUs and $task.memory memory"
+        publishDir "${params.outDirectory}/${sample.run}/mapped/", mode:'copy'
+        container "staphb/qualimap:2.3"
+        label "l_cpu"
+        label "l_mem"
+
+        input:
+        tuple val(name), val(sample), path(bam), path(bai)
+
+        output:
+        tuple val(name), val(sample), path("${name}.qualimap")
+
+        script:
+        """
+        echo QUALIMAP $name
+        qualimap bamqc -bam $bam --feature-file ${params.varbed1} -outformat PDF -outfile ${name}.qualimap.pdf -outdir ${name}.qualimap
+        """
 }
 
 process GATK {
@@ -401,6 +423,7 @@ workflow {
      . view()
 
 aligned = ALIGN(rawfastq)
+kontrolabamu = QUALIMAP(aligned)
 varcalling = GATK(aligned)
 normalizovany = VAFaNORMALIZACE(varcalling)
 
