@@ -144,7 +144,7 @@ process VAFaNORMALIZACE {
         bcftools +fill-tags $gatk -Ob -o ${name}.pom2.bcf -- -t FORMAT/VAF
         bcftools convert -O v -o ${name}.vaf.vcf ${name}.pom2.bcf 
          
-        bcftools norm -m-both -f ${params.ref}.fa -o ${name}.norm.vcf ${name}.vaf.vcf
+        bcftools norm -f ${params.ref}.fa -m -both ${name}.vaf.vcf -o ${name}.norm.vcf
         bgzip ${name}.norm.vcf
         tabix ${name}.norm.vcf.gz
 
