@@ -14,4 +14,13 @@ na
 bcftools norm -f ${params.ref}.fa -m -both ${name}.vaf.vcf -o ${name}.norm.vcf
 
 asi to nema vliv, porovnavala jsem rozdily, ale konvence je druhy zapis
+
 ------------------------------------------------------------------------------
+
+
+22.4. 2026
+
+pridane virtualni panely:
+BRONCO  genoderm  HBOC  hemato  lipanek  LYNCH  pojiva  prekonc  skelet
+------------------------------------------------------------------------------
+

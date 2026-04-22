@@ -364,7 +364,7 @@ process spojitannovarVEP {
         tuple val(name), val(sample), path(final_txt), path(vep_txt)
 
         output:
-        tuple val(name), val(sample), path("${name}.merged.txt")
+        path("${name}.merged.txt")
 
         script:
         """
@@ -378,65 +378,6 @@ process spojitannovarVEP {
 sed -i 's/ /\t/'g ${name}.merged.txt
         """
 }
-
-process VIRT1 {
-       tag "VIRT1 on $name"
-       publishDir "${params.outDirectory}/${sample.run}/janaF/", mode:'copy'
-       container "rocker/tidyverse:4"
-
-       input:
-       tuple val(name), val(sample), path("${name}.merged.txt")
-       output:
-       tuple val(name), val(sample), path("${name}.hemato.txt"), path("${name}.lipanek.txt"), path("${name}.prekonc.txt")
-
-
-       script:
-        """
-        Rscript --vanilla ${params.gene_filter} ${name}.merged.txt ${params.hemato} ${name}.hemato.txt
-        Rscript --vanilla ${params.gene_filter} ${name}.merged.txt ${params.lipanek} ${name}.lipanek.txt
-        Rscript --vanilla ${params.gene_filter} ${name}.merged.txt ${params.prekonc} ${name}.prekonc.txt
-       """
-}
-
-process VIRT2 {
-       tag "VIRT2 on $name"
-       publishDir "${params.outDirectory}/${sample.run}/ivonaB/", mode:'copy'
-       container "rocker/tidyverse:4"
-
-       input:
-       tuple val(name), val(sample), path("${name}.merged.txt")
-       output:
-       tuple val(name), val(sample), path("${name}.bronco.txt"), path("${name}.hboc.txt"), path("${name}.lynch.txt")
-
-
-       script:
-        """
-        Rscript --vanilla ${params.gene_filter} ${name}.merged.txt ${params.BRONCO} ${name}.bronco.txt
-        Rscript --vanilla ${params.gene_filter} ${name}.merged.txt ${params.HBOC} ${name}.hboc.txt
-        Rscript --vanilla ${params.gene_filter} ${name}.merged.txt ${params.LYNCH} ${name}.lynch.txt
-       """
-}
-
-
-process VIRT3 {
-       tag "VIRT2 on $name"
-       publishDir "${params.outDirectory}/${sample.run}/romanaB/", mode:'copy'
-       container "rocker/tidyverse:4"
-
-       input:
-       tuple val(name), val(sample), path("${name}.merged.txt")
-       output:
-       tuple val(name), val(sample), path("${name}.genoderm.txt"), path("${name}.pojiva.txt"), path("${name}.skelet.txt")
-
-
-       script:
-        """
-        Rscript --vanilla ${params.gene_filter} ${name}.merged.txt ${params.genoderm} ${name}.genoderm.txt
-        Rscript --vanilla ${params.gene_filter} ${name}.merged.txt ${params.pojiva} ${name}.pojiva.txt
-        Rscript --vanilla ${params.gene_filter} ${name}.merged.txt ${params.skelet} ${name}.skelet.txt
-       """
-}
-
 
 process COVERAGE1 {
           tag "COVERAGE1 on $name"
@@ -579,12 +520,7 @@ biopetovany = BIOPET(vepovany)
 textovany = VCFTOTXTVEP(biopetovany)
 
 combined = anotovanyfin.join(textovany, by: [0,1])
-annovep = spojitannovarVEP(combined)
-virtpanel1 = VIRT1(annovep)
-virtpanel2 = VIRT2(annovep)
-virtpanel3 = VIRT3(annovep)
-
-
+spojitannovarVEP(combined)
 
 coverage_results = COVERAGE1(aligned)
 coverage_files_collected = coverage_results
