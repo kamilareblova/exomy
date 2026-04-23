@@ -24,3 +24,8 @@ pridane virtualni panely:
 BRONCO  genoderm  HBOC  hemato  lipanek  LYNCH  pojiva  prekonc  skelet
 ------------------------------------------------------------------------------
 
+23.4. 2026 
+
+pridany sloupec z vep anotace VEP_consequence
+
+-----------------------------------------------------------------------------
