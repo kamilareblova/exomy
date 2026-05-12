@@ -32,3 +32,6 @@ pridany sloupec z vep anotace VEP_consequence
 
 29.4. - update omim databaze - nove stazeno + pridani sloupce Mane select z Vep anotace
 
+--------------------------------------------------------------
+
+12.5. - pridana analyza LOH a GNUPLOT

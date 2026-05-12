@@ -520,6 +520,100 @@ process COMBINECOVERAGEPROCENTA {
     """
 }
 
+process LOH {
+        tag "LOH"
+        publishDir { "${params.outDirectory}/${sample.run}/LOH/fily" }, mode: 'copy'
+
+        input:
+        tuple val(name), val(sample), path("${name}.norm.vcf.gz"), path("${name}.norm.vcf.gz.tbi")
+
+        output:
+        tuple val(name), val(sample), path("${name}.chr1.smooth"), path("${name}.chr2.smooth"), path("${name}.chr3.smooth"),path("${name}.chr4.smooth"),path("${name}.chr5.smooth"),path("${name}.chr6.smooth"),path("${name}.chr7.smooth"),path("${name}.chr8.smooth"),path("${name}.chr9.smooth"),path("${name}.chr10.smooth"),path("${name}.chr11.smooth"),path("${name}.chr12.smooth"),path("${name}.chr13.smooth"),path("${name}.chr14.smooth"),path("${name}.chr15.smooth"),path("${name}.chr16.smooth"),path("${name}.chr17.smooth"),path("${name}.chr18.smooth"),path("${name}.chr19.smooth"),path("${name}.chr20.smooth"),path("${name}.chr21.smooth"),path("${name}.chr22.smooth"), path("${name}.chrX.smooth")
+
+        script:
+        """
+        source activate bcftoolsbgziptabix
+        bcftools query   -f '%CHROM\t%POS\t[%GT]\t[%VAF]\n' ${name}.norm.vcf.gz > ${name}.baf.tsv
+
+        awk '{print "chr"\$0}' ${name}.baf.tsv > ${name}.baf-chr.tsv
+
+       grep chr1 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr1.smooth 
+       grep chr2 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr2.smooth
+       grep chr3 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr3.smooth
+       grep chr4 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr4.smooth
+       grep chr5 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr5.smooth
+       grep chr6 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr6.smooth
+       grep chr7 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr7.smooth
+       grep chr8 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr8.smooth
+       grep chr9 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr9.smooth
+       grep chr10 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr10.smooth
+       grep chr11 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr11.smooth
+       grep chr12 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr12.smooth
+       grep chr13 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr13.smooth
+       grep chr14 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr14.smooth
+       grep chr15 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr15.smooth
+       grep chr16 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr16.smooth
+       grep chr17 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr17.smooth
+       grep chr18 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr18.smooth
+       grep chr19 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr19.smooth
+       grep chr20 ${name}.baf-chr.tsv  |awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr20.smooth
+       grep chr21 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr21.smooth
+       grep chr22 ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chr22.smooth
+       grep chrX ${name}.baf-chr.tsv | awk '{print \$1"\t"\$2"\t"\$3"\t"(\$4>0.5?\$4-0.5:0.5-\$4)}' | awk '{bin=int(\$2/500000); sum[bin]+=\$4; n[bin]++} END{for(i in sum)print i*500000, sum[i]/n[i]}'  | sort -n > ${name}.chrX.smooth
+
+ 
+
+       """
+}
+
+process GNUPLOT {
+        tag "GNUPLOT"
+        publishDir { "${params.outDirectory}/${sample.run}/LOH/" }, mode: 'copy'
+        container "xreblova/gnuplot:1"
+ 
+        input:
+        tuple val(name), val(sample), path("${name}.chr1.smooth"), path("${name}.chr2.smooth"), path("${name}.chr3.smooth"),path("${name}.chr4.smooth"),path("${name}.chr5.smooth"),path("${name}.chr6.smooth"),path("${name}.chr7.smooth"),path("${name}.chr8.smooth"),path("${name}.chr9.smooth"),path("${name}.chr10.smooth"),path("${name}.chr11.smooth"),path("${name}.chr12.smooth"),path("${name}.chr13.smooth"),path("${name}.chr14.smooth"),path("${name}.chr15.smooth"),path("${name}.chr16.smooth"),path("${name}.chr17.smooth"),path("${name}.chr18.smooth"),path("${name}.chr19.smooth"),path("${name}.chr20.smooth"),path("${name}.chr21.smooth"),path("${name}.chr22.smooth"), path("${name}.chrX.smooth")
+
+        output:
+        tuple val(name), val(sample), path("${name}.loh.png")
+
+        script:
+        """
+        echo 'set term png size 2000,900' > ${name}.gnuplot.script
+        echo 'set output "${name}.loh.png"' >> ${name}.gnuplot.script
+        echo 'set xtics font "Arial,9"' >> ${name}.gnuplot.script
+        echo 'set multiplot layout 6,4' >> ${name}.gnuplot.script
+
+        echo 'plot "${name}.chr1.smooth" using 1:2 w l title "CHR1"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr2.smooth" using 1:2 w l title "CHR2"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr3.smooth" using 1:2 w l title "CHR3"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr4.smooth" using 1:2 w l title "CHR4"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr5.smooth" using 1:2 w l title "CHR5"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr6.smooth" using 1:2 w l title "CHR6"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr7.smooth" using 1:2 w l title "CHR7"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr8.smooth" using 1:2 w l title "CHR8"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr9.smooth" using 1:2 w l title "CHR9"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr10.smooth" using 1:2 w l title "CHR10"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr11.smooth" using 1:2 w l title "CHR11"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr12.smooth" using 1:2 w l title "CHR12"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr13.smooth" using 1:2 w l title "CHR13"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr14.smooth" using 1:2 w l title "CHR14"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr15.smooth" using 1:2 w l title "CHR15"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr16.smooth" using 1:2 w l title "CHR16"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr17.smooth" using 1:2 w l title "CHR17"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr18.smooth" using 1:2 w l title "CHR18"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr19.smooth" using 1:2 w l title "CHR19"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr20.smooth" using 1:2 w l title "CHR20"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr21.smooth" using 1:2 w l title "CHR21"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chr22.smooth" using 1:2 w l title "CHR22"' >> ${name}.gnuplot.script
+        echo 'plot "${name}.chrX.smooth" using 1:2 w l title "CHRX"' >> ${name}.gnuplot.script
+ 
+        echo 'unset multiplot' >> ${name}.gnuplot.script
+
+gnuplot ${name}.gnuplot.script
+      """
+} 
+
 
 workflow {
         rawfastq = Channel.fromPath("${params.homeDir}/samplesheet.csv")
@@ -584,7 +678,8 @@ annovep = spojitannovarVEP(combined)
  virtpanel2 = VIRT2(annovep)
  virtpanel3 = VIRT3(annovep)
 
-
+loh = LOH(normalizovany)
+graf = GNUPLOT(loh)
 
 coverage_results = COVERAGE1(aligned)
 coverage_files_collected = coverage_results
