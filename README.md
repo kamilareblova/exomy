@@ -35,3 +35,7 @@ pridany sloupec z vep anotace VEP_consequence
 --------------------------------------------------------------
 
 12.5. - pridana analyza LOH a GNUPLOT
+
+----------------
+
+15.5. - opraveni grep za grep -w u lohu
