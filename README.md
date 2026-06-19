@@ -39,3 +39,9 @@ pridany sloupec z vep anotace VEP_consequence
 ----------------
 
 15.5. - opraveni grep za grep -w u lohu
+
+--------------------------------------------
+
+19.6. - pridani qc kontroly pro mapping pomoci picardu.
+vysledky z qualimap do samostatneho adresare qualimap
+a z obou adresaru 2 multiqc reporty

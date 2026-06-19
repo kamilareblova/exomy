@@ -90,7 +90,7 @@ process FLAGSTAT {
 process QUALIMAP {
 
         tag "QUALIMAP on $name using $task.cpus CPUs and $task.memory memory"
-        publishDir "${params.outDirectory}/${sample.run}/mapped/", mode:'copy'
+        publishDir "${params.outDirectory}/${sample.run}/qualimap/", mode:'copy'
         container "staphb/qualimap:2.3"
         label "l_cpu"
         label "xl_mem"
@@ -107,6 +107,71 @@ process QUALIMAP {
         qualimap --java-mem-size=16G bamqc -bam $bam --feature-file ${params.varbed1} -outformat PDF -outfile ${name}.qualimap.pdf -outdir ${name}.qualimap 
         """
 }
+
+process MULTIQC3 {
+        tag "MULTIQC3 on ${run_name} using $task.cpus CPUs and $task.memory memory"
+        container "staphb/multiqc:1.30"
+
+        input:
+        tuple val(run_name), path(qualimap_files)
+
+        publishDir { "${params.outDirectory}/${run_name}/qualimap/" }, mode: 'copy'
+
+        output:
+        path("multiqc_report_qualimap.html")
+
+        script:
+        """
+        echo Running MultiQC3 for $run_name
+        ls -lh
+        multiqc . -n multiqc_report_qualimap.html
+        """
+
+}
+
+
+process PICARD {
+
+        tag "PICARD on $name using $task.cpus CPUs and $task.memory memory"
+        publishDir "${params.outDirectory}/${sample.run}/picard/", mode:'copy'
+        container "broadinstitute/picard:3.4.0"
+        label "m_mem"
+        label "s_cpu"
+
+        input:
+        tuple val(name), val(sample), path(bam), path(bai)
+
+        output:
+        tuple val(name), val(sample), path("${name}.hs_metrics.txt")
+
+        script:
+        """
+        java -jar /usr/picard/picard.jar CollectHsMetrics  I=$bam O=${name}.hs_metrics.txt R=${params.refindex}.fa BAIT_INTERVALS=${params.HyperExomeV2_capture.interval_list} TARGET_INTERVALS=${params.HyperExomeV2_primary_targets.interval_list}
+        """
+}
+
+process MULTIQC2 {
+        tag "MULTIQC2 on ${run_name} using $task.cpus CPUs and $task.memory memory"
+        container "staphb/multiqc:1.30"
+
+        input:
+        tuple val(run_name), path(picard_files)
+
+        publishDir { "${params.outDirectory}/${run_name}/picard/" }, mode: 'copy'
+
+        output:
+        path("multiqc_report_picard.html")
+
+        script:
+        """
+        echo Running MultiQC2 for $run_name
+        ls -lh
+        multiqc . -n multiqc_report_picard.html
+        """
+
+}
+
+
 
 process GATK {
        tag "GATK on $name"
@@ -301,7 +366,7 @@ process VCF2TXT {
 
 process VEP {
     tag "VEP on $name"
-     // publishDir "${params.outDirectory}/${sample.run}/varianty/", mode:'copy' 
+     publishDir "${params.outDirectory}/${sample.run}/varianty/", mode:'copy' 
     //container "ensemblorg/ensembl-vep:release_108.0"
     container "ensemblorg/ensembl-vep:release_114.1"
   
@@ -339,7 +404,7 @@ process BIOPET {
 process VCFTOTXTVEP {
 
         tag "VCFTOTXTVEP on $name"
-        // publishDir "${params.outDirectory}/${sample.run}/varianty/", mode:'copy'
+        publishDir "${params.outDirectory}/${sample.run}/varianty/", mode:'copy'
 
         input:
         tuple val(name), val(sample), path(biopet)
@@ -658,6 +723,37 @@ MULTIQC1(grouped_fastqc_files)
 aligned = ALIGN(rawfastq)
 // kontrolabamu1 = FLAGSTAT(aligned)
 kontrolabamu2 = QUALIMAP(aligned)
+
+//Group the QUALIMAP output files by run name
+    grouped_qualimap_files = kontrolabamu2
+        .map { name, sample, qualimap_dir ->
+            tuple(sample.run, qualimap_dir)
+        }
+        .groupTuple()           // groups by run name: [run_name: [[files], [files], ...]]
+        .map { run_name, lists_of_files ->
+            def all_files = lists_of_files.flatten()
+            tuple(run_name, all_files)
+        }
+
+MULTIQC3(grouped_qualimap_files)
+
+
+kontrolabamu3 = PICARD(aligned)
+
+//Group the PICARD output files by run name
+    grouped_picard_files = kontrolabamu3
+        .map { name, sample, hsmetrics ->
+            tuple(sample.run, [hsmetrics])
+        }
+        .groupTuple()           // groups by run name: [run_name: [[files], [files], ...]]
+        .map { run_name, lists_of_files ->
+            def all_files = lists_of_files.flatten()
+            tuple(run_name, all_files)
+        }
+
+MULTIQC2(grouped_picard_files)
+
+
 varcalling = GATK(aligned)
 normalizovany = VAFaNORMALIZACE(varcalling)
 
