@@ -45,3 +45,9 @@ pridany sloupec z vep anotace VEP_consequence
 19.6. - pridani qc kontroly pro mapping pomoci picardu.
 vysledky z qualimap do samostatneho adresare qualimap
 a z obou adresaru 2 multiqc reporty
+
+------------------------------------------------
+
+22.6. - update databaze v splice ai na spliceai_scores.raw.snv.ensembl_mane_v1.4.grch38.vcf.gz
+zmena v nextflow.config
+-------------------------------------------------
