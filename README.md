@@ -68,3 +68,6 @@ zmena v nextflow.config
 
 2.9. - pridana analyza CNV, generuji se soubory CNV_M.csv  CNV_Z.csv ve slozce CNV
 + opraveno kopirovani do databaze Anicky, pres matrix prostredi po konzultaci s umelakem
+
+----------------------------------------------------
+16.9. sloupec Alamut zmizel, asi se prepsal main.nf omylem starsi verzi. Dns opravuji
