@@ -71,3 +71,9 @@ zmena v nextflow.config
 
 ----------------------------------------------------
 16.9. sloupec Alamut zmizel, asi se prepsal main.nf omylem starsi verzi. Dns opravuji
+
+17.9. pridan region do bedu pro coverage SMN1
+5       70951915        70951941        SMN1,SMN2
+5       70951942        70951950        SMN1 9 nukleotidu---tento
+5       70951951        70952017        SMN1,SMN2
+--------------------------------------------------
