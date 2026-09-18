@@ -77,3 +77,8 @@ zmena v nextflow.config
 5       70951942        70951950        SMN1 9 nukleotidu---tento
 5       70951951        70952017        SMN1,SMN2
 --------------------------------------------------
+18.9. u bedu +-20 a +- 50 zjisteny prekryvajici se regiony, ted se bedy jmenuji jinak,
+navic pridany 2 nove sloupce do variant, kde je mapabilita pro k50 a k100
+
+----------------------------------------------------------
+
