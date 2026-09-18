@@ -286,7 +286,12 @@ process ANOTACE_ACGT {
         """
         source activate gatk4610
         echo ANOTACEACGT $name
-        gatk --java-options "-Xmx4g"  VariantAnnotator   -V ${name}.norm.vcf.gz -O ${name}.norm.acgt.vcf.gz --resource:ACGT ${params.ACGT} --expression ACGT.AF   --expression ACGT.AC   --expression ACGT.AC_Hom   --expression ACGT.AC_Het   --expression ACGT.AC_Hemi
+
+        gatk --java-options "-Xmx4g"  VariantAnnotator   -V ${name}.norm.vcf.gz -O ${name}.k50.vcf.gz --resource:mappab50 ${params.mapK50} --expression mappab50.MAPPABILITY
+
+        gatk --java-options "-Xmx4g"  VariantAnnotator   -V ${name}.k50.vcf.gz -O ${name}.k100.vcf.gz --resource:mappab100 ${params.mapK100} --expression mappab100.MAPPABILITY 
+
+        gatk --java-options "-Xmx4g"  VariantAnnotator   -V ${name}.k100.vcf.gz -O ${name}.norm.acgt.vcf.gz --resource:ACGT ${params.ACGT} --expression ACGT.AF   --expression ACGT.AC   --expression ACGT.AC_Hom   --expression ACGT.AC_Het   --expression ACGT.AC_Hemi
 
         gunzip ${name}.norm.acgt.vcf.gz
         """
@@ -404,7 +409,7 @@ process ANOTACE_annovar {
 
 process VCF2TXT {
        tag "VCF2TXT on $name"
-       // publishDir "${params.outDirectory}/${sample.run}/varianty/", mode:'copy'
+        publishDir "${params.outDirectory}/${sample.run}/varianty/", mode:'copy'
 
         input:
         tuple val(name), val(sample), path("${name}.norm.metarnn.vcf.gz.hg38_multianno.vcf.gz"), path("${name}.norm.metarnn.vcf.gz.hg38_multianno.vcf.gz.tbi")
@@ -416,7 +421,7 @@ process VCF2TXT {
         """
         echo VCF2TXT $name
         source activate gatk4610
-        gatk --java-options "-Xmx4g" VariantsToTable -R ${params.ref}.fa  --show-filtered  -V ${name}.norm.metarnn.vcf.gz.hg38_multianno.vcf.gz -F CHROM -F POS -F REF -F ALT -GF GT -GF AD -GF DP -GF SB -GF VAF -F dedicnostAR -F dedicnostAD -F dedicnostXlinked -F dedicnostYlinked -F fenotyp  -F ACGT.AF -F ACGT.AC -F ACGT.AC_Hom -F ACGT.AC_Het -F ACGT.AC_Hemi -F Func.refGeneWithVer -F Gene.refGeneWithVer -F GeneDetail.refGeneWithVer -F ExonicFunc.refGeneWithVer -F AAChange.refGeneWithVer -F 1000g2015aug_all -F 1000g2015aug_eur  -F gnomad41_exome_AF -F gnomad41_exome_AF_nfe -F gnomad41_genome_AF -F gnomad41_genome_AF_nfe -F avsnp150 -F CLNSIG -F REVEL -F MetaRNN.Varsome -F SIFT_pred -F MutationTaster_pred -F Gene_full_name.refGeneWithVer -F FATHMM_pred -F PROVEAN_pred -F Function_description.refGeneWithVer -F Disease_description.refGeneWithVer -F Tissue_specificityUniprot.refGeneWithVer -F Expression-egenetics.refGeneWithVer --output ${name}.final.txt
+        gatk --java-options "-Xmx4g" VariantsToTable -R ${params.ref}.fa  --show-filtered  -V ${name}.norm.metarnn.vcf.gz.hg38_multianno.vcf.gz -F CHROM -F POS -F REF -F ALT -GF GT -GF AD -GF DP -GF SB -GF VAF -F dedicnostAR -F dedicnostAD -F dedicnostXlinked -F dedicnostYlinked -F fenotyp  -F ACGT.AF -F ACGT.AC -F ACGT.AC_Hom -F ACGT.AC_Het -F ACGT.AC_Hemi -F Func.refGeneWithVer -F Gene.refGeneWithVer -F GeneDetail.refGeneWithVer -F ExonicFunc.refGeneWithVer -F AAChange.refGeneWithVer -F 1000g2015aug_all -F 1000g2015aug_eur  -F gnomad41_exome_AF -F gnomad41_exome_AF_nfe -F gnomad41_genome_AF -F gnomad41_genome_AF_nfe -F avsnp150 -F CLNSIG -F REVEL -F MetaRNN.Varsome -F SIFT_pred -F MutationTaster_pred -F Gene_full_name.refGeneWithVer -F FATHMM_pred -F PROVEAN_pred -F Function_description.refGeneWithVer -F Disease_description.refGeneWithVer -F Tissue_specificityUniprot.refGeneWithVer -F Expression-egenetics.refGeneWithVer -F mappab50.MAPPABILITY -F mappab100.MAPPABILITY --output ${name}.final.txt
         """
 }
 
@@ -493,17 +498,18 @@ process spojitannovarVEP {
         awk '{print \$1, \$2, \$4, \$5, \$30, \$41, \$42, \$46, \$47, \$48, \$49, \$61, \$62, \$63, \$64, \$67, \$68}' ${vep_txt}  > vyber
         sed -i 's/ /\t/'g vyber
         paste ${final_txt}  vyber > spojeni
-       
 
-        awk '{print \$1, \$2, \$3, \$4, \$15, \$16, \$17, \$18, \$19, \$48, \$51, \$49, \$50, \$5, \$6, \$7, \$8, \$9, \$10, \$11, \$12, \$13, \$14, \$20, \$21, \$22, \$23, \$24, \$25, \$26, \$27, \$28, \$29, \$30, \$31, \$32, \$33, \$34, \$35, \$36, \$37, \$38, \$39, \$40, \$41, \$42, \$43, \$44, \$45, \$46, \$47, \$52, \$53, \$54, \$55, \$56, \$57, \$58, \$59, \$60}' spojeni > ${name}.m.txt
+        awk '{print \$1, \$2, \$3, \$4, \$15, \$16, \$17, \$18, \$19, \$50, \$53, \$51, \$52, \$5, \$6, \$7, \$8, \$9, \$10, \$11, \$12, \$13, \$14, \$20, \$21, \$22, \$23, \$24, \$25, \$26, \$27, \$28, \$29, \$30, \$31, \$32, \$33, \$34, \$35, \$36, \$37, \$38, \$39, \$40, \$41, \$42, \$43, \$44, \$45, \$46, \$47, \$48, \$49, \$54, \$55, \$56, \$57, \$58, \$59, \$60, \$61, \$62}' spojeni > ${name}.m.txt
 
 sed -i 's/ /\t/'g ${name}.m.txt
 
         awk '{print "Chr"\$1"(GRCh38):g."\$2\$3">"\$4}' ${name}.m.txt > a
         sed -i '1s/.*/ALAMUT/' a
         paste ${name}.m.txt a > b
-        awk '{print \$1, \$2, \$3, \$4, \$6, \$5, \$61, \$7, \$8, \$9, \$10, \$11, \$12, \$13, \$14, \$15, \$16, \$17, \$18, \$19, \$20, \$21, \$22, \$23, \$24, \$25, \$26, \$27, \$28, \$29, \$30, \$31, \$32, \$33, \$34, \$35, \$36, \$37, \$38, \$39, \$40, \$41, \$42, \$43, \$44, \$45, \$46, \$47, \$48, \$49, \$50, \$51, \$52, \$53, \$54, \$55, \$56, \$57, \$58, \$59, \$60}' b > ${name}.merged.txt
-        sed -i 's/ /\t/'g ${name}.merged.txt 
+        awk '{print \$1, \$2, \$3, \$4, \$6, \$5, \$63, \$7, \$8, \$9, \$10, \$11, \$12, \$13, \$14, \$15, \$16, \$17, \$18, \$19, \$20, \$21, \$22, \$23, \$24, \$25, \$26, \$27, \$28, \$29, \$30, \$31, \$32, \$33, \$34, \$35, \$36, \$37, \$38, \$39, \$40, \$41, \$42, \$43, \$44, \$45, \$46, \$47, \$48, \$49, \$50, \$51, \$52, \$53, \$54, \$55, \$56, \$57, \$58, \$59, \$60, \$61, \$62}' b > ${name}.merged.txt
+        sed -i 's/ /\t/'g ${name}.merged.txt
+
+       
         """
 }
 
