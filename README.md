@@ -62,7 +62,7 @@ zmena v nextflow.config
 17.8. - pridani ALAMUT sloupce cislo 5 nove a zakomentovani virt. 3 panelu pro janu fialovou - nepotrebuje je
 -----------------------------------------------------
 
-20.8. - kopirovani meerged files do Databaze Anicky, oprava chyby
+20.8. - kopirovani mexerged files do Databaze Anicky, oprava chyby
 
 ----------------------------------------------------
 
@@ -81,4 +81,6 @@ zmena v nextflow.config
 navic pridany 2 nove sloupce do variant, kde je mapabilita pro k50 a k100
 
 ----------------------------------------------------------
+23.9. pridan novy proces - CALCULATE_SMN1_COVERAGE
 
+--------------------------------------------------------

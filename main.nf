@@ -809,6 +809,62 @@ process CNV_R {
 }
 
 
+process CALCULATE_SMN1_COVERAGE {
+
+    tag "${run_name}"
+    publishDir "${params.outDirectory}/${run_name}/CNV", mode: "copy"
+
+    input:
+    tuple val(run_name), path(coverage_file)
+
+    output:
+    tuple val(run_name), path("smn1_coverage_summary.txt")
+
+    script:
+    """
+    grep -Fw -f ${params.neuro_list} ${coverage_file} > xxx
+
+    awk '
+    NR==1 {
+        lastcol=NF
+
+        for (i=5; i<=NF; i++)
+            sample[i]=\$i
+
+        next
+    }
+
+    {
+        if (\$4 == "SMN1-9-nukleotidu") {
+            for (i=5; i<=NF; i++)
+                smn1[i]=\$i
+        }
+
+        else {
+            for (i=5; i<=NF; i++) {
+                sum[i] += \$i
+                n[i]++
+            }
+        }
+    }
+
+    END {
+        print "sample\\tmean_coverage\\tratio\\tsmn1_coverage"
+
+        for (i=5; i<=lastcol; i++) {
+            if (n[i] > 0 && smn1[i] > 0) {
+                mean=sum[i]/n[i]
+                ratio=smn1[i]/mean
+
+                print sample[i] "\\t" mean "\\t" ratio "\\t" smn1[i]
+            }
+        }
+    }
+    ' ${coverage_file} > smn1_coverage_summary.txt
+    """
+}
+
+
 workflow {
         rawfastq = Channel.fromPath("${params.homeDir}/samplesheet.csv")
     .splitCsv(header: true)
@@ -912,6 +968,8 @@ coverage_files_collected = coverage_results
     .groupTuple() // groups by sample.run automatically!
 finalcoverage = COMBINECOVERAGEMEAN(coverage_files_collected)
 finalprocenta = COMBINECOVERAGEPROCENTA(coverage_files_collected)
+
+covsmn1 = CALCULATE_SMN1_COVERAGE(finalcoverage)
 
 finalcoverage_all = finalcoverage
     .map { run_name, f -> f }
